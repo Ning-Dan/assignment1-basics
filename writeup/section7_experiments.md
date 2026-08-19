@@ -74,6 +74,10 @@ each; the differences between adjacent LRs near the optimum (0.01 nats) are at t
 noise floor, so "best" means "best-or-tied".  Figures:
 `figures/lr_sweep_{steps,wallclock}.png`, `figures/lr_divergence_{steps,wallclock}.png`.
 
+<div class="fig-pair"><img src="figures/lr_sweep_steps.png" alt="lr_sweep vs steps" width="49%"> <img src="figures/lr_sweep_wallclock.png" alt="lr_sweep vs wall-clock" width="49%"></div>
+
+<div class="fig-pair"><img src="figures/lr_divergence_steps.png" alt="lr_divergence vs steps" width="49%"> <img src="figures/lr_divergence_wallclock.png" alt="lr_divergence vs wall-clock" width="49%"></div>
+
 | peak LR | 1e-4 | 3e-4 | 1e-3 | **2e-3** | 3e-3 | 5e-3 | 1e-2 | 3e-2 | 1e-1 |
 |---|---|---|---|---|---|---|---|---|---|
 | val loss @5,000 steps (40.96M tokens) | 2.291 | 1.876 | 1.669 | **1.639** | 1.648 | 1.727 | 1.803 | 2.359 | 3.049 |
@@ -86,6 +90,8 @@ catches up within the budget.
 **(a) Full-budget model.**  `ts_full_lr3e-3` (and `ts_full_lr2e-3`): baseline
 architecture, 327,680,000 tokens = 40,000 steps × 32 × 256, warmup 2,000, cosine to
 α/10 at step 40,000.  Figure `figures/ts_full_{steps,wallclock}.png`.
+
+<div class="fig-pair"><img src="figures/ts_full_steps.png" alt="ts_full vs steps" width="49%"> <img src="figures/ts_full_wallclock.png" alt="ts_full vs wall-clock" width="49%"></div>
 
 | run | LR (peak → min) | wall-clock | tokens/s | val loss, 40 fixed batches (last / best) | **val loss, full validation set** |
 |---|---|---|---|---|---|
@@ -183,6 +189,8 @@ TinyStories but not reliable world/state tracking over a whole story.
 `--no-rmsnorm` removes the two block norms and the final norm (`norm="none"`).
 Figure `figures/ablation_rmsnorm_{steps,wallclock}.png`.
 
+<div class="fig-pair"><img src="figures/ablation_rmsnorm_steps.png" alt="ablation_rmsnorm vs steps" width="49%"> <img src="figures/ablation_rmsnorm_wallclock.png" alt="ablation_rmsnorm vs wall-clock" width="49%"></div>
+
 | run | LR | outcome | val loss @5k |
 |---|---|---|---|
 | baseline | 3e-3 | fine | 1.648 |
@@ -215,6 +223,8 @@ large learning rates (with only 4 layers we see the slower optimisation but not 
 instability; the classic result is that post-norm needs warmup and small LRs at depth).
 Pre-norm keeps a clean residual path, which is why it is the consensus choice.
 
+<div class="fig-pair"><img src="figures/ablation_postnorm_steps.png" alt="ablation_postnorm vs steps" width="49%"> <img src="figures/ablation_postnorm_wallclock.png" alt="ablation_postnorm vs wall-clock" width="49%"></div>
+
 ## no_pos_emb
 
 `--no-rope` (NoPE: no positional information at all; the causal mask is the only
@@ -228,11 +238,15 @@ handicap for a task where local order (subject–verb–object, quotes) matters 
 model is small and trained briefly.  With a longer budget the gap would shrink but not
 vanish (RoPE's inductive bias is simply the right one for language).
 
+<div class="fig-pair"><img src="figures/ablation_nope_steps.png" alt="ablation_nope vs steps" width="49%"> <img src="figures/ablation_nope_wallclock.png" alt="ablation_nope vs wall-clock" width="49%"></div>
+
 ## swiglu_ablation
 
 `--ffn silu --d-ff 2048` (FFN(x) = W₂ SiLU(W₁x) with d_ff = 4·d_model, 2 matrices) vs the
 SwiGLU baseline (d_ff 1344, 3 matrices).  Parameter counts: 22.83M vs 22.70M (FFN 2.10M vs
 2.06M per layer) — matched within 0.6%.  Figure `figures/ablation_swiglu_{steps,wallclock}.png`.
+
+<div class="fig-pair"><img src="figures/ablation_swiglu_steps.png" alt="ablation_swiglu vs steps" width="49%"> <img src="figures/ablation_swiglu_wallclock.png" alt="ablation_swiglu vs wall-clock" width="49%"></div>
 
 | FFN | params | seed 0 | seed 1 | mean |
 |---|---|---|---|---|
@@ -240,6 +254,8 @@ SwiGLU baseline (d_ff 1344, 3 matrices).  Parameter counts: 22.83M vs 22.70M (FF
 | SiLU (no gate), d_ff 2048 | 22.83M | 1.635 | 1.646 | 1.640 |
 
 (second seeds: `figures/ablation_swiglu_seeds_{steps,wallclock}.png`)
+
+<div class="fig-pair"><img src="figures/ablation_swiglu_seeds_steps.png" alt="ablation_swiglu_seeds vs steps" width="49%"> <img src="figures/ablation_swiglu_seeds_wallclock.png" alt="ablation_swiglu_seeds vs wall-clock" width="49%"></div>
 
 At this scale and budget the two are **indistinguishable**: the seed-to-seed spread
 (0.014) is as large as the difference between the architectures, and the curves lie on
@@ -262,6 +278,8 @@ of the steps, cosine to α/10, LR re-tuned per batch size with two values each (
 B=32 optimum 3e-3 and a √B-scaled guess), validation on the same 327,680 tokens
 (`--eval-batches 1280/B`).  Figure `figures/batch_size_{steps,wallclock}.png`
 (step axis is log-scaled because the step counts span 2,500 … 160,000).
+
+<div class="fig-pair"><img src="figures/batch_size_steps.png" alt="batch_size vs steps" width="49%"> <img src="figures/batch_size_wallclock.png" alt="batch_size vs wall-clock" width="49%"></div>
 
 | batch | steps | LR tried → best | val loss @40.96M tokens | wall-clock | tokens/s | peak VRAM |
 |---|---|---|---|---|---|---|
@@ -310,6 +328,8 @@ Same architecture (vocab 32,000, `out/owt32k`; everything else identical), same
 step counts as the TinyStories runs: 5,000 steps × B32 (40.96M tokens) at two learning
 rates, then the full 40,000 steps (327.68M tokens) at the better one.  Figure
 `figures/owt_{steps,wallclock}.png` (TinyStories runs of the same budget overlaid).
+
+<div class="fig-pair"><img src="figures/owt_steps.png" alt="owt vs steps" width="49%"> <img src="figures/owt_wallclock.png" alt="owt vs wall-clock" width="49%"></div>
 
 | run | data | LR | steps × B | tokens | wall-clock | tokens/s | val loss (fixed batches) | full-val-set loss |
 |---|---|---|---|---|---|---|---|---|
@@ -411,6 +431,8 @@ memory share (the fp32 logits alone are 2.1 GB per copy), so B=32.  (3) A small
 "equal wall-clock" architecture probe: 4.5 minutes each with the cosine schedule sized
 from a 100-step throughput measurement so it ends at 4 min (`figures/lb_probe_*`):
 
+<div class="fig-pair"><img src="figures/lb_probe_steps.png" alt="lb_probe vs steps" width="49%"> <img src="figures/lb_probe_wallclock.png" alt="lb_probe vs wall-clock" width="49%"></div>
+
 | config | non-emb. params | tokens/s | steps in 4 min | val loss @4 min |
 |---|---|---|---|---|
 | **4 layers, d 512 (baseline)** | 12.5M | 178k | 4,875 | **4.579** |
@@ -441,3 +463,5 @@ buys very little because the loss is decreasing roughly linearly in *log* tokens
 recipe would see ≈2.5–3.5B tokens in 45 minutes (5–8× more) and would sit
 around 3.7–3.9 by that extrapolation; getting substantially lower requires the model
 changes above plus a larger model, which is what the top leaderboard entries do.
+
+<div class="fig-pair"><img src="figures/leaderboard_steps.png" alt="leaderboard vs steps" width="49%"> <img src="figures/leaderboard_wallclock.png" alt="leaderboard vs wall-clock" width="49%"></div>

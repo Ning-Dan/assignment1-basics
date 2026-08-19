@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-uv run pytest --timeout 10 -v ./tests --junitxml=test_results.xml || true
+.venv/bin/python -m pytest --timeout 10 -v ./tests --junitxml=test_results.xml || true
 echo "Done running tests"
 
 # Set the name of the output tar.gz file
@@ -31,6 +31,13 @@ zip -r "$output_file" . \
     -x '*.pt' \
     -x '*.pth' \
     -x '*.npy' \
-    -x '*.npz'
+    -x '*.npz' \
+    -x '*.gz' \
+    -x '*.zip' \
+    -x 'data/*' \
+    -x 'out/*' \
+    -x 'runs/*' \
+    -x 'tests/fixtures/*' \
+    -x 'tests/_snapshots/*'
 
 echo "All files have been compressed into $output_file"
