@@ -161,3 +161,7 @@ cython_debug/
 
 .ruff_cache/
 *.zip
+# assignment data / outputs (large, local only)
+data
+out/
+*.npy
