@@ -113,6 +113,9 @@ prompt + continuation, with token count / stop reason on stderr.
 
 ## §7 `generate` deliverable
 
-*(To be filled by the §7 experiments: ≥256-token dump from the trained TinyStories
-checkpoint via the command above, plus commentary on fluency and on at least two
-factors — e.g. temperature/top-p, model size / training tokens, validation loss.)*
+Filled in `writeup/section7_experiments.md`, section *generate*: a 300-token dump and a
+170-token story from the best TinyStories checkpoint (`ts_full_lr2e-3`, full-validation
+loss 1.391; `scripts/generate.py … --temperature 0.8 --top-p 0.9`), plus the discussion
+of the factors that change output quality (temperature / top-p, training tokens /
+validation loss, dataset, prompt).  The same section also lists the OpenWebText
+samples (`main_experiment`).
