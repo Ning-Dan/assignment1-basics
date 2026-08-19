@@ -225,10 +225,14 @@ def scaled_dot_product_attention(Q: Tensor, K: Tensor, V: Tensor, mask: Tensor |
     mask: (..., queries, keys) broadcastable to the score matrix.
     """
     d_k = Q.shape[-1]
-    scores = einsum(Q, K, "... q d, ... k d -> ... q k") / math.sqrt(d_k)
+    # Scores/softmax are computed in fp32 (matches what autocast does for softmax). Under bf16
+    # autocast + torch.compile the fused bf16 einsum -> scale -> softmax path produced non-finite
+    # Q/K gradients on RTX 5080 / torch 2.11; keeping the softmax in fp32 avoids that and is
+    # numerically safer anyway. Probabilities are cast back to V's dtype for the PV matmul.
+    scores = einsum(Q, K, "... q d, ... k d -> ... q k").float() / math.sqrt(d_k)
     if mask is not None:
         scores = scores.masked_fill(~mask, float("-inf"))
-    probs = softmax(scores, dim=-1)
+    probs = softmax(scores, dim=-1).to(V.dtype)
     return einsum(probs, V, "... q k, ... k d -> ... q d")
 
 
