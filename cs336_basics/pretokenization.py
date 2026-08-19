@@ -19,6 +19,9 @@ import regex as re
 PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
 _PAT_RE = re.compile(PAT)
 
+# Upper bound on the byte size of one pre-tokenization chunk (see count_pretokens_in_file).
+MAX_CHUNK_BYTES = 64 << 20
+
 
 def find_chunk_boundaries(
     file: BinaryIO,
@@ -88,15 +91,16 @@ def count_pretokens_in_text(text: str, special_tokens: list[str] | None) -> Coun
 
     Special tokens are used as hard segment boundaries and are *not* counted.
     """
-    counts: Counter[bytes] = Counter()
+    # Count on str first (``findall`` + ``Counter.update`` run in C, no per-token Python
+    # loop) and encode only the *distinct* pre-tokens at the end.
+    str_counts: Counter[str] = Counter()
     splitter = special_token_splitter(special_tokens)
     segments = splitter.split(text) if splitter is not None else [text]
+    findall = _PAT_RE.findall
     for segment in segments:
-        if not segment:
-            continue
-        for m in _PAT_RE.finditer(segment):
-            counts[m.group().encode("utf-8")] += 1
-    return counts
+        if segment:
+            str_counts.update(findall(segment))
+    return Counter({tok.encode("utf-8"): cnt for tok, cnt in str_counts.items()})
 
 
 def _count_chunk(args: tuple[str | os.PathLike, int, int, list[str] | None]) -> Counter[bytes]:
@@ -131,7 +135,12 @@ def count_pretokens_in_file(
 
     with open(input_path, "rb") as f:
         if special_tokens:
-            boundaries = find_chunk_boundaries(f, num_processes * 4, special_tokens[0].encode("utf-8"))
+            f.seek(0, os.SEEK_END)
+            file_size = f.tell()
+            # enough chunks to keep every worker busy, but cap chunk size (~64MB) so a
+            # worker never holds hundreds of MB of decoded text at once
+            desired = max(num_processes * 4, -(-file_size // MAX_CHUNK_BYTES))
+            boundaries = find_chunk_boundaries(f, desired, special_tokens[0].encode("utf-8"))
         else:
             f.seek(0, os.SEEK_END)
             boundaries = [0, f.tell()]
